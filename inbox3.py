@@ -5,10 +5,10 @@ import argparse
 from email.parser import Parser
 
 from aiosmtpd.controller import Controller
-from logbook import Logger, StreamHandler
+import logbook
 
-log = Logger(__name__)
-StreamHandler(sys.stdout).push_application()
+log = logbook.Logger(__name__)
+logbook.StreamHandler(sys.stdout, level=logbook.INFO).push_application()
 
 
 class InboxServerHandler:
