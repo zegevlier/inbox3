@@ -1,28 +1,31 @@
 # -*- coding: utf-8 -*-
 
-import smtpd
-import asyncore
+import sys
 import argparse
 from email.parser import Parser
 
-from logbook import Logger
-
+from aiosmtpd.controller import Controller
+from logbook import Logger, StreamHandler
 
 log = Logger(__name__)
+StreamHandler(sys.stdout).push_application()
 
 
-class InboxServer(smtpd.SMTPServer, object):
-    """Logging-enabled SMTPServer instance with handler support."""
-
-    def __init__(self, handler, *args, **kwargs):
-        super(InboxServer, self).__init__(*args, **kwargs)
+class InboxServerHandler:
+    def __init__(self, handler):
         self._handler = handler
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    async def handle_DATA(self, server, session, envelope):
+        mailfrom = envelope.mail_from
+        rcpttos = envelope.rcpt_tos
+        data = envelope.content.decode('utf8', errors='replace')
         log.info('Collating message from {0}'.format(mailfrom))
         subject = Parser().parsestr(data)['subject']
         log.debug(dict(to=rcpttos, sender=mailfrom, subject=subject, body=data))
-        return self._handler(to=rcpttos, sender=mailfrom, subject=subject, body=data)
+        if self._handler:
+            self._handler(to=rcpttos, sender=mailfrom, subject=subject, body=data)
+
+        return '250 Message accepted for delivery'
 
 
 class Inbox(object):
@@ -44,13 +47,15 @@ class Inbox(object):
         address = address or self.address
 
         log.info('Starting SMTP server at {0}:{1}'.format(address, port))
-
-        server = InboxServer(self.collator, (address, port), None)
+        controller = Controller(InboxServerHandler(self.collator), hostname=address, port=port)
 
         try:
-            asyncore.loop()
+            controller.start()
+            controller._thread.join()
         except KeyboardInterrupt:
             log.info('Cleaning up')
+        finally:
+            controller.stop()
 
     def dispatch(self):
         """Command-line dispatch."""

@@ -1,23 +1,28 @@
-Inbox.py: SMTP Server for Humans
-================================
+Inbox3: SMTP Server for Humans with asyncio
+===========================================
 
-This is the simplest SMTP server you'll ever see. It's asynchronous. 
+Inspired by the inbox.py based on asyncore.
 
-One instance should handle over one thousand emails per second.
-
+Inbox3 is an asyncio-based SMTP server.
 
 Usage
 -----
 
 Give your app an inbox easily::
 
-    from inbox import Inbox
+    from inbox3 import Inbox
 
     inbox = Inbox()
 
+
     @inbox.collate
     def handle(to, sender, subject, body):
-        ...
+        print('Message sender %s' % sender)
+        print('Message to %s' % to)
+        print('Message body: \n')
+        print(body)
+        print('End of message')
+
 
     # Bind directly.
     inbox.serve(address='0.0.0.0', port=4467)
@@ -31,7 +36,7 @@ You can also defer to the commandline::
 ::
 
     $ dasinbox.py 0.0.0.0 4467
-    [2012-04-28 07:31] INFO: inbox: Starting SMTP server at 0.0.0.0:4467
+    [2012-04-28 07:31] INFO: inbox3: Starting SMTP server at 0.0.0.0:4467
 
 
 Installation
@@ -40,3 +45,4 @@ Installation
 Installing Inbox.py is simple::
 
     $ pip install inbox.py
+
