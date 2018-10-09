@@ -38,3 +38,9 @@ You can also defer to the commandline::
 
     $ dasinbox.py 0.0.0.0 4467
     [2012-04-28 07:31] INFO: inbox3: Starting SMTP server at 0.0.0.0:4467
+
+
+Installation
+------------
+
+    $ pip install git+https://github.com/2minchul/inbox3.git
