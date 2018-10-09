@@ -1,7 +1,8 @@
 Inbox3: SMTP Server for Humans with asyncio
 ===========================================
 
-Inspired by the inbox.py based on asyncore.
+
+Inspired by the `inbox.py <https://github.com/kennethreitz/inbox.py>`_ based on asyncore.
 
 Inbox3 is an asyncio-based SMTP server.
 
@@ -37,12 +38,3 @@ You can also defer to the commandline::
 
     $ dasinbox.py 0.0.0.0 4467
     [2012-04-28 07:31] INFO: inbox3: Starting SMTP server at 0.0.0.0:4467
-
-
-Installation
-------------
-
-Installing Inbox.py is simple::
-
-    $ pip install inbox.py
-
