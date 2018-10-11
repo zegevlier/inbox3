@@ -2,30 +2,36 @@
 
 import sys
 import argparse
+import inspect
 from email.parser import Parser
+import logging
 
 from aiosmtpd.controller import Controller
+from aiosmtpd.smtp import SMTP, Envelope, Session
 import logbook
 
 log = logbook.Logger(__name__)
-logbook.StreamHandler(sys.stdout, level=logbook.INFO).push_application()
 
 
 class InboxServerHandler:
     def __init__(self, handler):
         self._handler = handler
 
-    async def handle_DATA(self, server, session, envelope):
+    async def handle_DATA(self, server: SMTP, session: Session, envelope: Envelope):
         mailfrom = envelope.mail_from
         rcpttos = envelope.rcpt_tos
         data = envelope.content.decode('utf8', errors='replace')
         log.info('Collating message from {0}'.format(mailfrom))
         subject = Parser().parsestr(data)['subject']
         log.debug(dict(to=rcpttos, sender=mailfrom, subject=subject, body=data))
+        result = None
         if self._handler:
-            self._handler(to=rcpttos, sender=mailfrom, subject=subject, body=data)
+            if inspect.iscoroutinefunction(self._handler):
+                result = await self._handler(to=rcpttos, sender=mailfrom, subject=subject, body=data)
+            else:
+                result = await server.loop.run_in_executor(None, self._handler, rcpttos, mailfrom, subject, data)
 
-        return '250 Message accepted for delivery'
+        return '250 Message accepted for delivery' if result is None else result
 
 
 class Inbox(object):
@@ -41,8 +47,10 @@ class Inbox(object):
         self.collator = collator
         return collator
 
-    def serve(self, port=None, address=None):
+    def serve(self, port=None, address=None, log_level=logbook.INFO):
         """Serves the SMTP server on the given port and address."""
+        logbook.StreamHandler(sys.stdout, level=log_level).push_application()
+
         port = port or self.port
         address = address or self.address
 
