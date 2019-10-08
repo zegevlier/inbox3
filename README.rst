@@ -17,7 +17,7 @@ Give your app an inbox easily::
 
 
     @inbox.collate
-    def handle(to, sender, subject, body):
+    async def handle(to, sender, subject, body):
         print('Message sender %s' % sender)
         print('Message to %s' % to)
         print('Message body: \n')
