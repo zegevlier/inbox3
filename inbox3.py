@@ -4,13 +4,9 @@ import sys
 import argparse
 import inspect
 from email.parser import Parser
-import logging
 
 from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import SMTP, Envelope, Session
-import logbook
-
-log = logbook.Logger(__name__)
 
 
 class InboxServerHandler:
@@ -21,9 +17,7 @@ class InboxServerHandler:
         mailfrom = envelope.mail_from
         rcpttos = envelope.rcpt_tos
         data = envelope.content.decode('utf8', errors='replace')
-        log.info('Collating message from {0}'.format(mailfrom))
         subject = Parser().parsestr(data)['subject']
-        log.debug(dict(to=rcpttos, sender=mailfrom, subject=subject, body=data))
         result = None
         if self._handler:
             if inspect.iscoroutinefunction(self._handler):
@@ -49,19 +43,16 @@ class Inbox(object):
 
     def serve(self, port=None, address=None, log_level=logbook.INFO):
         """Serves the SMTP server on the given port and address."""
-        logbook.StreamHandler(sys.stdout, level=log_level).push_application()
 
         port = port or self.port
         address = address or self.address
 
-        log.info('Starting SMTP server at {0}:{1}'.format(address, port))
         controller = Controller(InboxServerHandler(self.collator), hostname=address, port=port)
 
         try:
             controller.start()
             controller._thread.join()
         except KeyboardInterrupt:
-            log.info('Cleaning up')
         finally:
             controller.stop()
 
